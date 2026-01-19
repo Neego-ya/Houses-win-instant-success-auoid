@@ -29,6 +29,7 @@ let spawnTimer = 0;
 let moneyTexts = [];
 // 🔊 音效
 let clickSound;
+let redPacketSound;
 let audioStarted = false;
 
 
@@ -40,8 +41,8 @@ function preload() {
   horse3 = loadImage('horse3.png');
   horse4 = loadImage('horse4.png');
   // 🔊 加载音效
-  clickSound = loadSound('click.wav');
-
+ clickSound = loadSound('click.wav');
+  redPacketSound = loadSound('redpacket.wav');
 }
 
 // ================= setup =================
@@ -168,7 +169,7 @@ function mousePressed() {
       }
       h.onClick();
 
-      let txt = random() < 0.08 ? '马年大吉' : '成功';
+      let txt = random() < 0.08 ? '马年大吉' : '马倒成功';
       floatingTexts.push(
         new FloatingText(width / 2, height / 2, txt)
       );
@@ -337,8 +338,9 @@ class RedPacketParticle {
 
     this.life--;
 
-    // 💥 爆炸结束的“那一瞬间”
+    
     if (this.life === 0) {
+      if (redPacketSound.isLoaded()) redPacketSound.play(); // 🧧💥
       moneyTexts.push(new MoneyText(this.x, this.y));
       this.dead = true;
     }
@@ -371,7 +373,7 @@ class FloatingText {
     this.vx = cos(a) * s;
     this.vy = sin(a) * s;
 
-    this.w = txt === '马年大吉' ? 160 : 80;
+    this.w = (txt === '马年大吉'|| txt === '马倒成功') ? 120 : 80;
     this.h = 40;
   }
 
@@ -381,10 +383,20 @@ class FloatingText {
   }
 
   show() {
-    push();
-    translate(this.x, this.y);
-    rectMode(CENTER);
-    noStroke();
+     push();
+
+  // 🫨 抖动偏移（只给“马年大吉”）
+  let shakeX = 0;
+  let shakeY = 0;
+  if (this.txt === '马年大吉') {
+    shakeX = random(-4, 4);
+    shakeY = random(-4, 4);
+  }
+
+  translate(this.x + shakeX, this.y + shakeY);
+
+  rectMode(CENTER);
+  noStroke();
 
     // 🟥 红包式祝福
     if (this.txt === '马年大吉') {
@@ -401,7 +413,24 @@ class FloatingText {
 
     textAlign(CENTER, CENTER);
     textSize(20);
-    text(this.txt, 0, 1);
+    // ===== 绘制文字（支持“倒”字翻转）=====
+let chars = this.txt.split('');
+let charSpacing = 20; // 每个字之间的距离
+let startX = -((chars.length - 1) * charSpacing) / 2;
+
+for (let i = 0; i < chars.length; i++) {
+  let ch = chars[i];
+
+  push();
+  translate(startX + i * charSpacing, 1);
+
+  if (ch === '倒') {
+    rotate(PI); // 🔄 倒过来
+  }
+
+  text(ch, 0, 0);
+  pop();
+}
     pop();
   }
 
